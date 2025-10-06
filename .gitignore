@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# API Keys and Secrets
+.env
+*.key
+*API*
+!requirements.txt
+
+# Tests directory (contains private application files)
+tests/
+
+# Reports and temporary outputs
+reports/
+*.log
+
+# Config with potentially sensitive data
+config/extracted_text.txt
+config/extraction_metadata.json
+config/review_prompt_template.txt
+config/token_analysis.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Martensite specific
+martensite.pdf
+martensite.md

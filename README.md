@@ -1,4 +1,4 @@
-![Martensite Banner](assets/banner.png)
+![Martensite Banner](martensite/banner.png)
 
 # Martensite
 
@@ -13,6 +13,8 @@ A multi-LLM application review system for strengthening academic grant applicati
 The name "Martensite" derives from the hard, strong crystalline structure formed during rapid quenching of steel - analogous to how this system strengthens applications through rigorous AI-driven critique.
 
 ## Quick Start
+
+For confident super-users. If you're less comfortable in the terminal, proceed step-by-step through [Installation](#installation) below.
 
 ```bash
 # Install dependencies
@@ -30,65 +32,110 @@ martensite -a CV.pdf -P "Focus on research impact" -o cv_review.pdf
 
 ## Installation
 
-### 1. Add Martensite to Your PATH
+### 1. PATH Configuration
 
-Add the Martensite directory to your shell's PATH:
+The PATH tells your terminal where to find commands. This step lets you type `martensite` from any directory instead of typing the full path to the program.
+
+Add Martensite to your PATH using either method:
+
+**Option A: Direct export**
+
+This adds Martensite to your PATH permanently.
 
 ```bash
-# Add this line to your ~/.bashrc
+# Add this line to your ~/.bashrc or ~/.zshrc
 export PATH="$PATH:/path/to/Martensite"
+
+# Reload your shell configuration
+source ~/.bashrc  # or source ~/.zshrc
 ```
 
-Then reload your shell configuration:
-```bash
-source ~/.bashrc
-```
+**Option B: Symbolic link**
 
-### 2. Alternative: Create a Symbolic Link
-
-Or create a symbolic link in a directory already in your PATH:
+This creates a shortcut in a directory that's already in your PATH.
 
 ```bash
 ln -s /path/to/Martensite/martensite.sh ~/.local/bin/martensite
 ```
 
-### 3. Install Dependencies
+### 2. Dependencies
+
+Martensite is written in Python and generates referee reports as PDF files. You'll need to install some additional software packages.
 
 **Python dependencies:**
+
+These are Python libraries that Martensite uses to communicate with AI providers and process documents.
+
 ```bash
 pip install -r requirements.txt
 ```
 
-**System dependencies (Linux - Arch/Manjaro):**
+**Report dependencies:**
+
+PDF generation requires pandoc (document converter), LaTeX (typesetting system), and PDF utilities.
+
+**Linux (Arch/Manjaro):**
 ```bash
 sudo pacman -S pandoc texlive-core texlive-latexextra poppler
 ```
 
-**System dependencies (Linux - Debian/Ubuntu):**
+**Linux (Debian/Ubuntu):**
 ```bash
 sudo apt install pandoc texlive-xetex texlive-latex-extra poppler-utils
 ```
 
-**System dependencies (macOS):**
+**macOS:**
 ```bash
 brew install pandoc poppler
 brew install --cask mactex  # Or: brew install texlive
 ```
 
+### 3. API Keys
+
+Martensite supports three LLM providers. You need at least one API key to run reviews.
+
+**What are API keys?**
+
+If you've used ChatGPT through a web browser, you've been using OpenAI's consumer interface. API keys let Martensite access the same AI models programmatically, directly from your computer. Unlike the web interface with a monthly subscription, API access is pay-as-you-go: you add funds to your account and pay only for what you use (typically a few cents per review). You'll need to create a developer account with at least one provider (OpenAI, Anthropic, or Google) and add payment information before generating API keys.
+
+**How Martensite finds your keys:**
+
+Martensite checks three locations in order: environment variables → OS keyring → config file. Choose whichever method is most convenient for you.
+
+**Option A: Environment variables (recommended)**
+```bash
+export OPENAI_API_KEY="sk-..."
+export ANTHROPIC_API_KEY="sk-ant-..."
+export GOOGLE_API_KEY="..."
+```
+
+**Option B: OS keyring**
+```bash
+# Uses system Keychain (macOS) or Secret Service (Linux)
+keyring set llm/openai default    # paste key when prompted
+keyring set llm/anthropic default
+keyring set llm/google default
+```
+
+**Option C: Config file**
+
+Create `~/.config/llm-keys/config.toml` (Linux) or `~/Library/Application Support/llm-keys/config.toml` (macOS):
+
+```toml
+[openai]
+api_key = "sk-..."
+
+[anthropic]
+api_key = "sk-ant-..."
+
+[google]
+api_key = "..."
+```
+
 ## Platform Support
 
-✅ **Linux**: Fully supported (tested on Arch, Ubuntu, Debian)
-✅ **macOS**: Fully supported (10.15+ recommended)
-
-## Features
-
-✅ **Multi-LLM Reviews**: OpenAI (GPT-4o, GPT-5, o4-mini), Anthropic (Claude), Google (Gemini)
-✅ **Secure API Key Discovery**: Environment → keyring (Keychain/Secret Service) → config file
-✅ **Token Usage Tracking**: Monitor input/output tokens per model
-✅ **PDF + Markdown Output**: Both formats always generated
-✅ **Call Documentation Support**: Include grant call criteria in reviews
-✅ **Modular Python Package**: Clean architecture for easy extension
-✅ **Cross-Platform**: Works seamlessly on Linux and macOS
+- **Linux**: Fully supported (tested on Arch, Ubuntu, Debian)
+- **macOS**: Fully supported (10.15+ recommended)
 
 ## Usage
 
@@ -144,20 +191,6 @@ Martensite/
 └── README.md               # This file
 ```
 
-## Architecture
-
-```
-PDF Application + Call Docs
-        ↓
-Multi-LLM Dispatcher
-   ↓  ↓  ↓  ↓  ↓
-GPT-4o Claude Gemini o4-mini GPT-5
-   ↓  ↓  ↓  ↓  ↓
-Response Aggregator
-        ↓
-Markdown + PDF Output
-```
-
 ## Core Components
 
 ### 1. Multi-LLM Orchestration (`application_reviewer.py`)
@@ -193,31 +226,6 @@ Markdown + PDF Output
 ### Google
 - **gemini-2.5-pro**: Advanced multimodal model
 
-## Use Cases
-
-1. **Grant Application Review**: Systematic evaluation of research proposals
-2. **Academic Paper Critique**: Pre-submission peer review simulation
-3. **Fellowship Applications**: Comprehensive application strengthening
-4. **Research Statement Analysis**: Methodology and feasibility assessment
-5. **Teaching Statement Review**: Pedagogical approach evaluation
-
-## Output Format
-
-Martensite generates both Markdown and PDF outputs:
-
-### Markdown Structure
-- **Header**: Banner, timestamp, input files
-- **API Call Log**: Table with model, status, duration, token counts
-- **Prompt**: The review prompt provided
-- **Individual Reviews**: One per model, with timestamp
-- **Consensus Summary**: (Disabled by default)
-
-### PDF Features
-- **Custom headers**: Section names in left header, timestamp in right
-- **Page numbering**: "Page X of Y" in footer
-- **Clean typography**: Via XeLaTeX with DejaVu Sans font
-- **Professional formatting**: Proper spacing and structure
-
 ## Troubleshooting
 
 **"Command not found"**: Check your PATH or use full path to martensite.sh
@@ -240,21 +248,6 @@ Martensite generates both Markdown and PDF outputs:
 **Model fails**: Check API call log in output for specific error messages
 
 **macOS: "Operation not permitted"**: Grant Terminal full disk access in System Preferences → Security & Privacy
-
-## Scientific Validation
-
-The multi-LLM approach provides:
-- **Reduced bias** through model diversity
-- **Increased coverage** of potential issues
-- **Statistical robustness** through repeated sampling
-- **Diverse perspectives** from different model architectures
-
-## Integration Points
-
-- **LaTeX Workflow**: Direct PDF processing from compiled documents
-- **Version Control**: Track improvements across document iterations
-- **Academic Timelines**: Integrate with application deadline management
-- **Zathura/PDF Viewers**: Auto-refresh for iterative development
 
 ## License
 

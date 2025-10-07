@@ -328,25 +328,35 @@ async def run_reviews(extracted_text: str, prompt_text: str, api_key: str, call_
 DOCUMENT TEXT:
 {combined_text}"""
     
-    # Initialize OpenAI client
-    openai_client = AsyncOpenAI(api_key=api_key)
+    # Initialize OpenAI client only if key available
+    openai_client = AsyncOpenAI(api_key=api_key) if api_key else None
 
     # Discover Google API key using key_discovery module
     google_api_key = get_api_key('google')
+    if not google_api_key:
+        print("Warning: No Google API key found. Gemini models will be skipped.", file=sys.stderr)
 
     # Discover Anthropic API key using key_discovery module
     anthropic_api_key = get_api_key('anthropic')
     if not anthropic_api_key:
         print("Warning: No Anthropic API key found. Claude models will be skipped.", file=sys.stderr)
-    
+
     # Create review tasks
     tasks = []
     for model in models:
         for call_id in range(calls_per_model):
             if model.startswith('gpt') or model.startswith('o1') or model.startswith('o4'):
-                task = call_openai_model(openai_client, model, full_prompt, call_id)
+                if api_key and openai_client:
+                    task = call_openai_model(openai_client, model, full_prompt, call_id)
+                else:
+                    print(f"Skipping {model} - no OpenAI API key", file=sys.stderr)
+                    continue
             elif model.startswith('gemini'):
-                task = call_gemini_model(model, full_prompt, call_id, google_api_key)
+                if google_api_key:
+                    task = call_gemini_model(model, full_prompt, call_id, google_api_key)
+                else:
+                    print(f"Skipping {model} - no Google API key", file=sys.stderr)
+                    continue
             elif model.startswith('claude'):
                 if anthropic_api_key:
                     task = call_claude_model(model, full_prompt, call_id, anthropic_api_key)
@@ -461,7 +471,10 @@ def format_markdown_output(results: List[ReviewResult], prompt_text: str,
 
 """
 
-    for result in results:
+    # Only include successful results (no errors)
+    successful_results = [r for r in results if not r.error]
+
+    for result in successful_results:
         md_content += f"""
 \\newpage
 
@@ -473,8 +486,10 @@ def format_markdown_output(results: List[ReviewResult], prompt_text: str,
 
 ---
 """
-    
-    md_content += f"""
+
+    # Only include consensus summary if there are successful results and a summary exists
+    if successful_results and summary:
+        md_content += f"""
 \\newpage
 
 ## Consensus Summary
@@ -619,16 +634,15 @@ async def main():
 
     args = parser.parse_args()
 
-    # Discover OpenAI API key using key_discovery module
+    # Discover API keys using key_discovery module
     api_key = get_api_key('openai')
     if not api_key:
-        print("Error: No OpenAI API key found", file=sys.stderr)
+        print("Warning: No OpenAI API key found. OpenAI models will be skipped.", file=sys.stderr)
         import platform
         if platform.system() == "Darwin":
-            print("Please set OPENAI_API_KEY environment variable or configure in ~/Library/Application Support/llm-keys/config.toml", file=sys.stderr)
+            print("To enable OpenAI: Set OPENAI_API_KEY environment variable or configure in ~/Library/Application Support/llm-keys/config.toml", file=sys.stderr)
         else:
-            print("Please set OPENAI_API_KEY environment variable or configure in ~/.config/llm-keys/config.toml", file=sys.stderr)
-        sys.exit(1)
+            print("To enable OpenAI: Set OPENAI_API_KEY environment variable or configure in ~/.config/llm-keys/config.toml", file=sys.stderr)
     
     try:
         # Extract text from PDF
@@ -713,10 +727,9 @@ async def main():
             results = await run_reviews(extracted_text, prompt_text, api_key, call_docs_text)
         
         if not results:
-            print("Error: No successful reviews completed", file=sys.stderr)
-            sys.exit(1)
-        
-        print(f"Completed {len(results)} reviews")
+            print("Warning: No successful reviews completed. Generating report with empty results.", file=sys.stderr)
+        else:
+            print(f"Completed {len(results)} reviews")
 
         # Skip consensus summary (disabled)
         summary = ""

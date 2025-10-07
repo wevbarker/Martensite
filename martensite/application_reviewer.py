@@ -1,7 +1,16 @@
 #!/usr/bin/env python3
 """
-Multi-LLM Application Review System
-Sends PDF + prompt to multiple LLMs, aggregates results, and summarizes criticisms
+Multi-LLM Application Review System (EXPERIMENTAL - NOT IN USE)
+
+This module provides an alternative implementation with native PDF support
+for Anthropic and Google models. It is NOT currently wired into the CLI.
+
+Current status: Reference implementation
+Active implementation: martensite_handler.py (text extraction approach)
+
+Future work: Integrate this class-based approach to leverage native PDF APIs
+where available (Claude, Gemini) while maintaining text extraction fallback
+for models without PDF support (OpenAI GPT).
 """
 
 import asyncio

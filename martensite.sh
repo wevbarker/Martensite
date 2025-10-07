@@ -11,6 +11,7 @@ OUTPUT_PATH="./martensite.pdf"
 CALL_DOCS_PATH=""
 PROMPT_FILE=""
 PROMPT_STRING=""
+DRY_RUN=""
 # Get the real directory of the script (resolve symlinks)
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 MARTENSITE_DIR="$(dirname "$SCRIPT_PATH")"
@@ -42,7 +43,7 @@ usage() {
 }
 
 # Parse command line arguments
-while getopts "a:p:P:c:o:h" opt; do
+while getopts "a:p:P:c:o:hd" opt; do
     case $opt in
         a)
             APPLICATION_PDF="$OPTARG"
@@ -58,6 +59,9 @@ while getopts "a:p:P:c:o:h" opt; do
             ;;
         o)
             OUTPUT_PATH="$OPTARG"
+            ;;
+        d)
+            DRY_RUN="--dry-run"
             ;;
         h)
             usage
@@ -146,6 +150,10 @@ CMD_ARGS=(
 
 if [ -n "$CALL_DOCS_PATH" ]; then
     CMD_ARGS+=(--call-docs "$CALL_DOCS_PATH")
+fi
+
+if [ -n "$DRY_RUN" ]; then
+    CMD_ARGS+=($DRY_RUN)
 fi
 
 python3 "$PYTHON_SCRIPT" "${CMD_ARGS[@]}"

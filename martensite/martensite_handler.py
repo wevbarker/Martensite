@@ -2,6 +2,18 @@
 """
 Martensite - Adversarial hardening for modern grantsmanship
 Backend handler for the martensite.sh command
+
+This is the ACTIVE implementation used by the CLI.
+
+Implementation approach:
+- Extracts text from application PDF using PyPDF2/pdftotext
+- Sends extracted text to all LLM providers uniformly
+- Currently supports: OpenAI, Google Gemini
+- Future: Anthropic Claude (requires API key)
+
+Note: An alternative class-based implementation (application_reviewer.py) exists
+with native PDF support for Claude/Gemini, but is not currently integrated.
+See application_reviewer.py for details.
 """
 
 import sys
@@ -28,7 +40,7 @@ from openai import AsyncOpenAI
 from dataclasses import dataclass
 from typing import List, Dict, Any
 import google.generativeai as genai
-# import anthropic  # Temporarily disabled during package install
+import anthropic
 
 @dataclass
 class ReviewResult:
@@ -38,6 +50,10 @@ class ReviewResult:
     response: str
     cost: float
     timestamp: str
+    duration: float = 0.0  # Time taken in seconds
+    error: str = None  # Error message if failed
+    input_tokens: int = 0  # Input tokens used
+    output_tokens: int = 0  # Output tokens generated
 
 def extract_html_text(html_path: str) -> str:
     """Extract text from HTML file using basic parsing"""
@@ -152,12 +168,15 @@ def estimate_model_cost(model: str, input_tokens: int, output_tokens: int) -> fl
         'gpt-4o-mini': {'input': 0.15/1000000, 'output': 0.6/1000000},
         'o1-preview': {'input': 15.0/1000000, 'output': 60.0/1000000},
         'o1-mini': {'input': 3.0/1000000, 'output': 12.0/1000000},
+        'o4-mini-2025-04-16': {'input': 1.10/1000000, 'output': 4.40/1000000},  # April 2025 pricing
         'gpt-5': {'input': 1250.0/1000000, 'output': 10000.0/1000000},
         'gpt-5-mini': {'input': 1250.0/1000000, 'output': 10000.0/1000000},
         'gpt-5-nano': {'input': 1250.0/1000000, 'output': 10000.0/1000000},
         # Google (Google AI Studio free tier)
         'gemini-2.5-pro': {'input': 0.0/1000000, 'output': 0.0/1000000},
-        # Anthropic (per 1M tokens)
+        # Anthropic (per 1M tokens) - 2025 pricing
+        'claude-sonnet-4-5-20250929': {'input': 3.0/1000000, 'output': 15.0/1000000},
+        'claude-3-7-sonnet-20250219': {'input': 3.0/1000000, 'output': 15.0/1000000},  # Legacy
         'claude-opus-4.1': {'input': 15000.0/1000000, 'output': 75000.0/1000000},
     }
     
@@ -166,6 +185,7 @@ def estimate_model_cost(model: str, input_tokens: int, output_tokens: int) -> fl
 
 async def call_openai_model(client: AsyncOpenAI, model: str, prompt: str, call_id: int) -> ReviewResult:
     """Call OpenAI model with the given prompt"""
+    start_time = datetime.now()
     try:
         # Handle different parameter names for different models
         api_params = {
@@ -175,72 +195,110 @@ async def call_openai_model(client: AsyncOpenAI, model: str, prompt: str, call_i
                 {"role": "user", "content": prompt}
             ]
         }
-        
-        # GPT-5 has different parameter requirements
-        if model.startswith('gpt-5'):
-            api_params["max_completion_tokens"] = 1000  # GPT-5 needs more tokens for reasoning + output
-            # GPT-5 only supports default temperature (1), so don't set it
+
+        # Reasoning models (o-series, GPT-5) have different parameter requirements
+        if model.startswith('gpt-5') or model.startswith('o4') or model.startswith('o3'):
+            api_params["max_completion_tokens"] = 16000  # Reasoning models need more tokens
+            # Reasoning models don't support temperature parameter
+        elif model.startswith('o1'):
+            api_params["max_completion_tokens"] = 16000  # o1 uses max_completion_tokens
+            # o1 doesn't support temperature
         else:
-            api_params["max_tokens"] = 500
+            api_params["max_tokens"] = 1500
             api_params["temperature"] = 0.7
-            
+
         response = await client.chat.completions.create(**api_params)
-        
+        duration = (datetime.now() - start_time).total_seconds()
+
         # Calculate cost
         usage = response.usage
         cost = estimate_model_cost(model, usage.prompt_tokens, usage.completion_tokens)
-        
+
         return ReviewResult(
             model=model,
             call_id=call_id,
             response=response.choices[0].message.content,
             cost=cost,
-            timestamp=datetime.now().isoformat()
+            timestamp=start_time.isoformat(),
+            duration=duration,
+            input_tokens=usage.prompt_tokens,
+            output_tokens=usage.completion_tokens
         )
     except Exception as e:
-        print(f"Error calling {model}: {e}", file=sys.stderr)
-        return None
+        duration = (datetime.now() - start_time).total_seconds()
+        error_msg = str(e)
+        print(f"Error calling {model}: {error_msg}", file=sys.stderr)
+        return ReviewResult(
+            model=model,
+            call_id=call_id,
+            response="",
+            cost=0.0,
+            timestamp=start_time.isoformat(),
+            duration=duration,
+            error=error_msg
+        )
 
 async def call_gemini_model(model: str, prompt: str, call_id: int, api_key: str) -> ReviewResult:
     """Call Gemini model using the exact same approach as the working MCP server"""
+    start_time = datetime.now()
     try:
         # Configure Gemini (clone from MCP server)
         genai.configure(api_key=api_key)
-        
+
         # Create model instance (exactly like MCP server)
         gemini_model = genai.GenerativeModel(model)
-        
+
         # Generate response (exact same call as MCP server - no safety settings or config)
         response = gemini_model.generate_content(prompt)
-        
+        duration = (datetime.now() - start_time).total_seconds()
+
         # Extract response text (same as MCP server)
         response_text = response.text
-        
-        # Estimate tokens and cost
-        input_tokens = estimate_tokens(prompt)
-        output_tokens = estimate_tokens(response_text)
+
+        # Get actual token counts from API response (not estimation!)
+        if hasattr(response, 'usage_metadata'):
+            input_tokens = response.usage_metadata.prompt_token_count
+            output_tokens = response.usage_metadata.candidates_token_count
+        else:
+            # Fallback to estimation if usage_metadata not available
+            input_tokens = estimate_tokens(prompt)
+            output_tokens = estimate_tokens(response_text)
         cost = estimate_model_cost(model, input_tokens, output_tokens)
-        
+
         return ReviewResult(
             model=model,
             call_id=call_id,
             response=response_text,
             cost=cost,
-            timestamp=datetime.now().isoformat()
+            timestamp=start_time.isoformat(),
+            duration=duration,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens
         )
     except Exception as e:
-        print(f"Error calling {model}: {e}", file=sys.stderr)
-        return None
+        duration = (datetime.now() - start_time).total_seconds()
+        error_msg = str(e)
+        print(f"Error calling {model}: {error_msg}", file=sys.stderr)
+        return ReviewResult(
+            model=model,
+            call_id=call_id,
+            response="",
+            cost=0.0,
+            timestamp=start_time.isoformat(),
+            duration=duration,
+            error=error_msg
+        )
 
 async def call_claude_model(model: str, prompt: str, call_id: int, api_key: str) -> ReviewResult:
     """Call Claude model with the given prompt"""
+    start_time = datetime.now()
     try:
         # Initialize Anthropic client
         client = anthropic.Anthropic(api_key=api_key)
-        
-        # Call Claude with token limit
+
+        # Call Claude with token limit (use the model parameter passed in)
         response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",  # Use available model name for now
+            model=model,
             max_tokens=500,
             temperature=0.7,
             system="You are an expert academic referee reviewing grant applications.",
@@ -248,35 +306,50 @@ async def call_claude_model(model: str, prompt: str, call_id: int, api_key: str)
                 {"role": "user", "content": prompt}
             ]
         )
-        
+        duration = (datetime.now() - start_time).total_seconds()
+
         # Extract response text
         response_text = response.content[0].text if response.content else ""
-        
+
         # Calculate cost using usage information if available
         input_tokens = response.usage.input_tokens if hasattr(response, 'usage') else estimate_tokens(prompt)
         output_tokens = response.usage.output_tokens if hasattr(response, 'usage') else estimate_tokens(response_text)
         cost = estimate_model_cost(model, input_tokens, output_tokens)
-        
+
         return ReviewResult(
             model=model,
             call_id=call_id,
             response=response_text,
             cost=cost,
-            timestamp=datetime.now().isoformat()
+            timestamp=start_time.isoformat(),
+            duration=duration,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens
         )
     except Exception as e:
-        print(f"Error calling {model}: {e}", file=sys.stderr)
-        return None
+        duration = (datetime.now() - start_time).total_seconds()
+        error_msg = str(e)
+        print(f"Error calling {model}: {error_msg}", file=sys.stderr)
+        return ReviewResult(
+            model=model,
+            call_id=call_id,
+            response="",
+            cost=0.0,
+            timestamp=start_time.isoformat(),
+            duration=duration,
+            error=error_msg
+        )
 
 async def run_reviews(extracted_text: str, prompt_text: str, api_key: str, call_docs_text: str = "") -> List[ReviewResult]:
     """Run multi-LLM reviews using existing models from our cost analysis"""
     
     # Premium flagship models only - never skimp on quality
     models = [
-        'gemini-2.5-pro'    # Google's flagship (re-enabled with fallback handling)
-        # 'gpt-4o'          # Disabled per user request
-        # 'gpt-5'           # Disabled - uses all tokens for reasoning, no visible output on complex content
-        # 'claude-opus-4.1' # Disabled - awaiting anthropic package install
+        'gemini-2.5-pro',       # Google's flagship (re-enabled with fallback handling)
+        # 'claude-sonnet-4-5-20250929',  # Anthropic's flagship (Sep 2025) - Temporarily disabled
+        'o4-mini-2025-04-16',   # OpenAI's reasoning model (Apr 2025)
+        'gpt-4o',               # OpenAI's flagship multimodal model
+        'gpt-5'                 # OpenAI's most advanced model (testing)
     ]
     calls_per_model = 1  # Single call per model
     
@@ -303,7 +376,7 @@ DOCUMENT TEXT:
     tasks = []
     for model in models:
         for call_id in range(calls_per_model):
-            if model.startswith('gpt') or model.startswith('o1'):
+            if model.startswith('gpt') or model.startswith('o1') or model.startswith('o4'):
                 task = call_openai_model(openai_client, model, full_prompt, call_id)
             elif model.startswith('gemini'):
                 task = call_gemini_model(model, full_prompt, call_id, google_api_key)
@@ -320,11 +393,9 @@ DOCUMENT TEXT:
     
     # Run all tasks
     results = await asyncio.gather(*tasks, return_exceptions=True)
-    
-    # Filter out None results (failed calls)
-    valid_results = [r for r in results if isinstance(r, ReviewResult)]
-    
-    return valid_results
+
+    # Keep all ReviewResults including failed ones (with error field set)
+    return [r for r in results if isinstance(r, ReviewResult)]
 
 async def generate_consensus_summary(results: List[ReviewResult], api_key: str) -> str:
     """Generate consensus summary using existing logic from application_reviewer.py"""
@@ -361,44 +432,91 @@ Limit response to 300 tokens. Ignore one-off comments and focus on consensus cri
     except Exception as e:
         return f"Failed to generate consensus summary: {e}"
 
-def format_markdown_output(results: List[ReviewResult], prompt_text: str, 
-                          summary: str, pdf_path: str, total_cost: float) -> str:
+def build_file_tree(pdf_path: str, call_docs_path: str = None) -> str:
+    """Build a concise file tree showing input files"""
+    from pathlib import Path
+
+    tree = "## Input Files\n\n```\n"
+    tree += f"APPLICATION:  {Path(pdf_path).name}\n"
+
+    if call_docs_path:
+        call_path = Path(call_docs_path)
+        if call_path.is_file():
+            tree += f"CALL TEXT:    {call_path.name}\n"
+        elif call_path.is_dir():
+            tree += f"CALL TEXT:    {call_path.name}/\n"
+            # List files in directory (use ASCII for PDF compatibility)
+            files = [f for f in sorted(call_path.glob("*")) if f.is_file()]
+            for i, file in enumerate(files):
+                prefix = "|-- " if i < len(files) - 1 else "`-- "
+                tree += f"              {prefix}{file.name}\n"
+
+    tree += "```\n\n"
+    return tree
+
+def format_markdown_output(results: List[ReviewResult], prompt_text: str,
+                          summary: str, pdf_path: str, total_cost: float, call_docs_path: str = None, dry_run: bool = False) -> str:
     """Format results as markdown with timestamp header"""
-    
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
+    # Build file tree
+    file_tree = build_file_tree(pdf_path, call_docs_path)
+
+    # Build API call log as table
+    call_log = "## API Call Log\n\n"
+    call_log += "| Model | Req | Dry | Err | Time | In | Out |\n"
+    call_log += "|-------|-----|-----|-----|------|-------|--------|\n"
+    for result in results:
+        req_status = "Y" if not result.error else "N"
+        dry_status = "Y" if dry_run else "N"
+        err_status = "N" if not result.error else "Y"
+        tokens_in = f"{result.input_tokens:,}" if result.input_tokens > 0 else "0"
+        tokens_out = f"{result.output_tokens:,}" if result.output_tokens > 0 else "0"
+        call_log += f"| {result.model} | {req_status} | {dry_status} | {err_status} | {result.duration:.2f}s | {tokens_in} | {tokens_out} |\n"
+    call_log += "\n"
+
+    successful_results = [r for r in results if not r.error]
+
     md_content = f"""
 \\newpage
 
-# Martensite Review - {timestamp}
+# MARTENSITE
+## Adversarial hardening for modern grantsmanship
 
-**Document:** `{Path(pdf_path).name}`
-**Total Cost:** ${total_cost:.4f}
-**Models Used:** {', '.join(set(r.model for r in results))}
-**Number of Reviews:** {len(results)}
+---
 
-## Review Prompt
+# REPORT GENERATED: {timestamp}
 
-{prompt_text.strip()}
+{file_tree}
 
-## Individual Reviews
+{call_log}
+
+## Prompt by the referee
+
+``{prompt_text.strip()}''
+
 
 """
-    
+
     for result in results:
         md_content += f"""
 \\newpage
 
-### {result.model} (Call {result.call_id})
-**Cost:** ${result.cost:.4f}  
+## {result.model} (Call {result.call_id})
+
 **Timestamp:** {result.timestamp}
 
-<span style="color: darkred">{result.response}</span>
+\\begin{{leftbar}}
+{result.response}
+\\end{{leftbar}}
 
 ---
 """
     
     md_content += f"""
+\\newpage
+
 ## Consensus Summary
 
 {summary}
@@ -420,7 +538,8 @@ def convert_markdown_to_pdf(md_path: str, pdf_path: str) -> bool:
             '--pdf-engine=xelatex',
             '--variable', 'geometry:margin=1in',
             '--variable', 'fontsize=11pt',
-            '--variable', 'mainfont=DejaVu Sans'
+            '--variable', 'mainfont=DejaVu Sans',
+            '-V', 'header-includes=\\usepackage{fontspec}\\usepackage[dvipsnames]{xcolor}\\definecolor{darkred}{RGB}{139,0,0}\\usepackage{framed}\\renewenvironment{leftbar}{\\def\\FrameCommand{{\\color{darkred}\\vrule width 6pt\\relax\\hspace{10pt}}}\\MakeFramed{\\advance\\hsize-\\width\\FrameRestore}}{\\endMakeFramed}\\usepackage{fancyhdr}\\usepackage{lastpage}\\pagestyle{fancy}\\fancyhf{}\\fancyhead[L]{\\rightmark}\\fancyhead[R]{REPORT GENERATED: ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '}\\fancyfoot[C]{Page \\thepage\\ of \\pageref{LastPage}}\\renewcommand{\\headrulewidth}{0.4pt}'
         ], capture_output=True, text=True)
         
         if result.returncode == 0:
@@ -536,7 +655,8 @@ async def main():
     parser.add_argument('--prompt', required=True, help='Path to prompt text file')
     parser.add_argument('--call-docs', help='Path to call documentation (PDF/HTML files or directory)')
     parser.add_argument('--output', required=True, help='Path to output PDF')
-    
+    parser.add_argument('--dry-run', action='store_true', help='Skip API calls, generate report structure only')
+
     args = parser.parse_args()
 
     # Discover OpenAI API key using key_discovery module
@@ -573,8 +693,65 @@ async def main():
             print(f"Extracted {len(call_docs_text)} characters from call docs ({estimate_tokens(call_docs_text)} tokens)")
         
         # Run reviews
-        print("Running multi-LLM reviews...")
-        results = await run_reviews(extracted_text, prompt_text, api_key, call_docs_text)
+        if args.dry_run:
+            print("DRY RUN: Skipping API calls...")
+            # Create fake results for testing with lipsum text
+            lipsum_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+            results = [
+                ReviewResult(
+                    model="gemini-2.5-pro",
+                    call_id=0,
+                    response=lipsum_text,
+                    cost=0.0,
+                    timestamp=datetime.now().isoformat(),
+                    duration=0.0,
+                    input_tokens=0,
+                    output_tokens=0
+                ),
+                ReviewResult(
+                    model="claude-sonnet-4-5-20250929",
+                    call_id=0,
+                    response=lipsum_text,
+                    cost=0.0,
+                    timestamp=datetime.now().isoformat(),
+                    duration=0.0,
+                    input_tokens=0,
+                    output_tokens=0
+                ),
+                ReviewResult(
+                    model="o4-mini-2025-04-16",
+                    call_id=0,
+                    response=lipsum_text,
+                    cost=0.0,
+                    timestamp=datetime.now().isoformat(),
+                    duration=0.0,
+                    input_tokens=0,
+                    output_tokens=0
+                ),
+                ReviewResult(
+                    model="gpt-4o",
+                    call_id=0,
+                    response=lipsum_text,
+                    cost=0.0,
+                    timestamp=datetime.now().isoformat(),
+                    duration=0.0,
+                    input_tokens=0,
+                    output_tokens=0
+                ),
+                ReviewResult(
+                    model="gpt-5",
+                    call_id=0,
+                    response=lipsum_text,
+                    cost=0.0,
+                    timestamp=datetime.now().isoformat(),
+                    duration=0.0,
+                    input_tokens=0,
+                    output_tokens=0
+                )
+            ]
+        else:
+            print("Running multi-LLM reviews...")
+            results = await run_reviews(extracted_text, prompt_text, api_key, call_docs_text)
         
         if not results:
             print("Error: No successful reviews completed", file=sys.stderr)
@@ -594,7 +771,7 @@ async def main():
         md_path = output_path.with_suffix('.md')
         
         # Format markdown
-        md_content = format_markdown_output(results, prompt_text, summary, args.application, total_cost)
+        md_content = format_markdown_output(results, prompt_text, summary, args.application, total_cost, args.call_docs, args.dry_run)
         
         # Always overwrite existing files
         with open(md_path, 'w') as f:

@@ -507,9 +507,7 @@ def format_markdown_output(results: List[ReviewResult], prompt_text: str,
 
 **Timestamp:** {result.timestamp}
 
-\\begin{{leftbar}}
 {result.response}
-\\end{{leftbar}}
 
 ---
 """
@@ -539,7 +537,7 @@ def convert_markdown_to_pdf(md_path: str, pdf_path: str) -> bool:
             '--variable', 'geometry:margin=1in',
             '--variable', 'fontsize=11pt',
             '--variable', 'mainfont=DejaVu Sans',
-            '-V', 'header-includes=\\usepackage{fontspec}\\usepackage[dvipsnames]{xcolor}\\definecolor{darkred}{RGB}{139,0,0}\\usepackage{framed}\\renewenvironment{leftbar}{\\def\\FrameCommand{{\\color{darkred}\\vrule width 6pt\\relax\\hspace{10pt}}}\\MakeFramed{\\advance\\hsize-\\width\\FrameRestore}}{\\endMakeFramed}\\usepackage{fancyhdr}\\usepackage{lastpage}\\pagestyle{fancy}\\fancyhf{}\\fancyhead[L]{\\rightmark}\\fancyhead[R]{REPORT GENERATED: ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '}\\fancyfoot[C]{Page \\thepage\\ of \\pageref{LastPage}}\\renewcommand{\\headrulewidth}{0.4pt}'
+            '-V', 'header-includes=\\usepackage{fontspec}\\usepackage[dvipsnames]{xcolor}\\definecolor{darkred}{RGB}{139,0,0}\\usepackage{fancyhdr}\\usepackage{lastpage}\\pagestyle{fancy}\\fancyhf{}\\fancyhead[L]{\\rightmark}\\fancyhead[R]{REPORT GENERATED: ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '}\\fancyfoot[C]{Page \\thepage\\ of \\pageref{LastPage}}\\renewcommand{\\headrulewidth}{0.4pt}'
         ], capture_output=True, text=True)
         
         if result.returncode == 0:

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Key Discovery Module - Martensite
-Follows best practices for API key discovery on Linux systems
-Discovery order: Environment → Keyring → XDG Config
+Follows best practices for API key discovery on Linux and macOS
+Discovery order: Environment → Keyring → Config File
 """
 
 import os
@@ -30,8 +30,9 @@ def get_api_key(provider: str) -> Optional[str]:
 
     Discovery order:
     1. Environment variable (canonical name)
-    2. OS keyring via Secret Service (if available)
-    3. XDG config file (~/.config/llm-keys/config.toml)
+    2. OS keyring (Secret Service on Linux, Keychain on macOS)
+    3. Config file (XDG on Linux: ~/.config/llm-keys/config.toml,
+                    macOS: ~/Library/Application Support/llm-keys/config.toml)
 
     Args:
         provider: Provider name (e.g., 'openai', 'anthropic', 'google')
@@ -54,7 +55,7 @@ def get_api_key(provider: str) -> Optional[str]:
         if gemini_key:
             return gemini_key
 
-    # 2. Try OS keyring (Secret Service)
+    # 2. Try OS keyring (Secret Service on Linux, Keychain on macOS)
     try:
         import keyring
         service_name = f"llm/{provider}"
@@ -66,9 +67,17 @@ def get_api_key(provider: str) -> Optional[str]:
     except Exception:
         pass  # keyring backend not available
 
-    # 3. Check XDG config file
-    xdg_config_home = Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config"))
-    config_file = xdg_config_home / "llm-keys" / "config.toml"
+    # 3. Check config file (respects XDG_CONFIG_HOME or macOS conventions)
+    # Linux: ~/.config/llm-keys/config.toml
+    # macOS: ~/Library/Application Support/llm-keys/config.toml (if XDG_CONFIG_HOME unset)
+    if os.getenv("XDG_CONFIG_HOME"):
+        config_dir = Path(os.getenv("XDG_CONFIG_HOME"))
+    elif os.uname().sysname == "Darwin":  # macOS
+        config_dir = Path.home() / "Library" / "Application Support"
+    else:  # Linux/BSD
+        config_dir = Path.home() / ".config"
+
+    config_file = config_dir / "llm-keys" / "config.toml"
 
     if config_file.exists():
         try:
@@ -111,9 +120,15 @@ def check_provider_availability(provider: str) -> tuple[bool, str]:
     except Exception:
         pass
 
-    # Check XDG config
-    xdg_config_home = Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config"))
-    config_file = xdg_config_home / "llm-keys" / "config.toml"
+    # Check config file
+    if os.getenv("XDG_CONFIG_HOME"):
+        config_dir = Path(os.getenv("XDG_CONFIG_HOME"))
+    elif os.uname().sysname == "Darwin":  # macOS
+        config_dir = Path.home() / "Library" / "Application Support"
+    else:  # Linux/BSD
+        config_dir = Path.home() / ".config"
+
+    config_file = config_dir / "llm-keys" / "config.toml"
 
     if config_file.exists():
         try:
@@ -157,5 +172,9 @@ if __name__ == "__main__":
 
     print("\nKey discovery order:")
     print("  1. Environment variables")
-    print("  2. OS keyring (Secret Service)")
-    print("  3. XDG config (~/.config/llm-keys/config.toml)")
+    print("  2. OS keyring (Secret Service/Keychain)")
+    import platform
+    if platform.system() == "Darwin":
+        print("  3. Config file (~/Library/Application Support/llm-keys/config.toml)")
+    else:
+        print("  3. Config file (~/.config/llm-keys/config.toml)")

@@ -12,8 +12,9 @@ CALL_DOCS_PATH=""
 PROMPT_FILE=""
 PROMPT_STRING=""
 DRY_RUN=""
-# Get the real directory of the script (resolve symlinks)
-SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+# Get the real directory of the script (resolve symlinks) - portable version
+# Works on both Linux and macOS
+SCRIPT_PATH="$(python3 -c "import os, sys; print(os.path.realpath(sys.argv[1]))" "${BASH_SOURCE[0]}")"
 MARTENSITE_DIR="$(dirname "$SCRIPT_PATH")"
 PYTHON_SCRIPT="${MARTENSITE_DIR}/martensite/martensite_handler.py"
 
@@ -119,10 +120,10 @@ fi
 OUTPUT_DIR=$(dirname "$OUTPUT_PATH")
 mkdir -p "$OUTPUT_DIR"
 
-# Get absolute paths
-APPLICATION_PDF=$(realpath "$APPLICATION_PDF")
-PROMPT_FILE=$(realpath "$PROMPT_FILE")
-OUTPUT_PATH=$(realpath "$OUTPUT_PATH")
+# Get absolute paths (portable - works on Linux and macOS)
+APPLICATION_PDF=$(python3 -c "import os, sys; print(os.path.realpath(sys.argv[1]))" "$APPLICATION_PDF")
+PROMPT_FILE=$(python3 -c "import os, sys; print(os.path.realpath(sys.argv[1]))" "$PROMPT_FILE")
+OUTPUT_PATH=$(python3 -c "import os, sys; print(os.path.realpath(sys.argv[1]))" "$OUTPUT_PATH")
 
 # Display configuration
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"

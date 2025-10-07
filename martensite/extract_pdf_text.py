@@ -190,9 +190,9 @@ Please provide specific, actionable feedback with concrete suggestions for impro
 
 def main():
     parser = argparse.ArgumentParser(description='Extract text from PDF for Martensite review system')
-    parser.add_argument('--pdf-path', default='/home/barker/Documents/Applications/2025/LaCaixaIASTRO/StatementOfPurpose.pdf',
+    parser.add_argument('--pdf-path', required=True,
                        help='Path to PDF file')
-    parser.add_argument('--output-dir', default='/home/barker/Documents/Applications/Martensite/config',
+    parser.add_argument('--output-dir', default='./config',
                        help='Output directory for extracted text and templates')
     
     args = parser.parse_args()

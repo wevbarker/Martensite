@@ -48,7 +48,6 @@ class ReviewResult:
     model: str
     call_id: int
     response: str
-    cost: float
     timestamp: str
     duration: float = 0.0  # Time taken in seconds
     error: str = None  # Error message if failed
@@ -160,28 +159,6 @@ def estimate_tokens(text: str) -> int:
     """Estimate token count using 4 characters per token approximation"""
     return len(text) // 4
 
-def estimate_model_cost(model: str, input_tokens: int, output_tokens: int) -> float:
-    """Estimate API costs based on current pricing"""
-    costs = {
-        # OpenAI (per 1M tokens, so divide by 1,000,000)
-        'gpt-4o': {'input': 5.0/1000000, 'output': 15.0/1000000},
-        'gpt-4o-mini': {'input': 0.15/1000000, 'output': 0.6/1000000},
-        'o1-preview': {'input': 15.0/1000000, 'output': 60.0/1000000},
-        'o1-mini': {'input': 3.0/1000000, 'output': 12.0/1000000},
-        'o4-mini-2025-04-16': {'input': 1.10/1000000, 'output': 4.40/1000000},  # April 2025 pricing
-        'gpt-5': {'input': 1250.0/1000000, 'output': 10000.0/1000000},
-        'gpt-5-mini': {'input': 1250.0/1000000, 'output': 10000.0/1000000},
-        'gpt-5-nano': {'input': 1250.0/1000000, 'output': 10000.0/1000000},
-        # Google (Google AI Studio free tier)
-        'gemini-2.5-pro': {'input': 0.0/1000000, 'output': 0.0/1000000},
-        # Anthropic (per 1M tokens) - 2025 pricing
-        'claude-sonnet-4-5-20250929': {'input': 3.0/1000000, 'output': 15.0/1000000},
-        'claude-3-7-sonnet-20250219': {'input': 3.0/1000000, 'output': 15.0/1000000},  # Legacy
-        'claude-opus-4.1': {'input': 15000.0/1000000, 'output': 75000.0/1000000},
-    }
-    
-    model_costs = costs.get(model, costs['gpt-4o-mini'])
-    return (input_tokens * model_costs['input'] + output_tokens * model_costs['output'])
 
 async def call_openai_model(client: AsyncOpenAI, model: str, prompt: str, call_id: int) -> ReviewResult:
     """Call OpenAI model with the given prompt"""
@@ -210,15 +187,12 @@ async def call_openai_model(client: AsyncOpenAI, model: str, prompt: str, call_i
         response = await client.chat.completions.create(**api_params)
         duration = (datetime.now() - start_time).total_seconds()
 
-        # Calculate cost
         usage = response.usage
-        cost = estimate_model_cost(model, usage.prompt_tokens, usage.completion_tokens)
 
         return ReviewResult(
             model=model,
             call_id=call_id,
             response=response.choices[0].message.content,
-            cost=cost,
             timestamp=start_time.isoformat(),
             duration=duration,
             input_tokens=usage.prompt_tokens,
@@ -232,7 +206,6 @@ async def call_openai_model(client: AsyncOpenAI, model: str, prompt: str, call_i
             model=model,
             call_id=call_id,
             response="",
-            cost=0.0,
             timestamp=start_time.isoformat(),
             duration=duration,
             error=error_msg
@@ -263,13 +236,11 @@ async def call_gemini_model(model: str, prompt: str, call_id: int, api_key: str)
             # Fallback to estimation if usage_metadata not available
             input_tokens = estimate_tokens(prompt)
             output_tokens = estimate_tokens(response_text)
-        cost = estimate_model_cost(model, input_tokens, output_tokens)
 
         return ReviewResult(
             model=model,
             call_id=call_id,
             response=response_text,
-            cost=cost,
             timestamp=start_time.isoformat(),
             duration=duration,
             input_tokens=input_tokens,
@@ -283,7 +254,6 @@ async def call_gemini_model(model: str, prompt: str, call_id: int, api_key: str)
             model=model,
             call_id=call_id,
             response="",
-            cost=0.0,
             timestamp=start_time.isoformat(),
             duration=duration,
             error=error_msg
@@ -311,16 +281,14 @@ async def call_claude_model(model: str, prompt: str, call_id: int, api_key: str)
         # Extract response text
         response_text = response.content[0].text if response.content else ""
 
-        # Calculate cost using usage information if available
+        # Get usage information if available
         input_tokens = response.usage.input_tokens if hasattr(response, 'usage') else estimate_tokens(prompt)
         output_tokens = response.usage.output_tokens if hasattr(response, 'usage') else estimate_tokens(response_text)
-        cost = estimate_model_cost(model, input_tokens, output_tokens)
 
         return ReviewResult(
             model=model,
             call_id=call_id,
             response=response_text,
-            cost=cost,
             timestamp=start_time.isoformat(),
             duration=duration,
             input_tokens=input_tokens,
@@ -334,7 +302,6 @@ async def call_claude_model(model: str, prompt: str, call_id: int, api_key: str)
             model=model,
             call_id=call_id,
             response="",
-            cost=0.0,
             timestamp=start_time.isoformat(),
             duration=duration,
             error=error_msg
@@ -455,7 +422,7 @@ def build_file_tree(pdf_path: str, call_docs_path: str = None) -> str:
     return tree
 
 def format_markdown_output(results: List[ReviewResult], prompt_text: str,
-                          summary: str, pdf_path: str, total_cost: float, call_docs_path: str = None, dry_run: bool = False) -> str:
+                          summary: str, pdf_path: str, call_docs_path: str = None, dry_run: bool = False) -> str:
     """Format results as markdown with timestamp header"""
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -478,13 +445,8 @@ def format_markdown_output(results: List[ReviewResult], prompt_text: str,
 
     successful_results = [r for r in results if not r.error]
 
-    md_content = f"""
-\\newpage
-
-# MARTENSITE
+    md_content = f"""# MARTENSITE
 ## Adversarial hardening for modern grantsmanship
-
----
 
 # REPORT GENERATED: {timestamp}
 
@@ -529,7 +491,7 @@ def convert_markdown_to_pdf(md_path: str, pdf_path: str) -> bool:
     """Convert markdown to PDF using pandoc if available"""
     try:
         import subprocess
-        
+
         # Try pandoc with XeLaTeX for better Unicode support
         result = subprocess.run([
             'pandoc', md_path, '-o', pdf_path,
@@ -661,7 +623,11 @@ async def main():
     api_key = get_api_key('openai')
     if not api_key:
         print("Error: No OpenAI API key found", file=sys.stderr)
-        print("Please set OPENAI_API_KEY environment variable or configure in ~/.config/llm-keys/config.toml", file=sys.stderr)
+        import platform
+        if platform.system() == "Darwin":
+            print("Please set OPENAI_API_KEY environment variable or configure in ~/Library/Application Support/llm-keys/config.toml", file=sys.stderr)
+        else:
+            print("Please set OPENAI_API_KEY environment variable or configure in ~/.config/llm-keys/config.toml", file=sys.stderr)
         sys.exit(1)
     
     try:
@@ -700,7 +666,6 @@ async def main():
                     model="gemini-2.5-pro",
                     call_id=0,
                     response=lipsum_text,
-                    cost=0.0,
                     timestamp=datetime.now().isoformat(),
                     duration=0.0,
                     input_tokens=0,
@@ -710,7 +675,6 @@ async def main():
                     model="claude-sonnet-4-5-20250929",
                     call_id=0,
                     response=lipsum_text,
-                    cost=0.0,
                     timestamp=datetime.now().isoformat(),
                     duration=0.0,
                     input_tokens=0,
@@ -720,7 +684,6 @@ async def main():
                     model="o4-mini-2025-04-16",
                     call_id=0,
                     response=lipsum_text,
-                    cost=0.0,
                     timestamp=datetime.now().isoformat(),
                     duration=0.0,
                     input_tokens=0,
@@ -730,7 +693,6 @@ async def main():
                     model="gpt-4o",
                     call_id=0,
                     response=lipsum_text,
-                    cost=0.0,
                     timestamp=datetime.now().isoformat(),
                     duration=0.0,
                     input_tokens=0,
@@ -740,7 +702,6 @@ async def main():
                     model="gpt-5",
                     call_id=0,
                     response=lipsum_text,
-                    cost=0.0,
                     timestamp=datetime.now().isoformat(),
                     duration=0.0,
                     input_tokens=0,
@@ -756,20 +717,16 @@ async def main():
             sys.exit(1)
         
         print(f"Completed {len(results)} reviews")
-        
+
         # Skip consensus summary (disabled)
         summary = ""
-        
-        # Calculate total cost
-        total_cost = sum(r.cost for r in results)
-        print(f"Total cost: ${total_cost:.4f}")
-        
+
         # Prepare output paths
         output_path = Path(args.output)
         md_path = output_path.with_suffix('.md')
-        
+
         # Format markdown
-        md_content = format_markdown_output(results, prompt_text, summary, args.application, total_cost, args.call_docs, args.dry_run)
+        md_content = format_markdown_output(results, prompt_text, summary, args.application, args.call_docs, args.dry_run)
         
         # Always overwrite existing files
         with open(md_path, 'w') as f:

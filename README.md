@@ -2,6 +2,8 @@
 
 # Martensite
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 *Adversarial hardening for modern grantsmanship*
 
 ```bash
@@ -11,7 +13,7 @@ Takes your research proposal `application.pdf` and the public call texts downloa
 
 ## Logos (this part was written by a human)
 
-Grantsmanship - the process of securing grants - is changing due to AI. This is an unprecedented, irreversible and unavoidable process, occurring at a rate which exceeds the adaptive capacity of all institutions and most individuals. From the accelerationist perspective, it is necessary to _lean in_ to emerging technologies and ensure that they serve to maximisee scientific productivity. This is, moreover, a duty incumbent on all researchers, owing to the importance of public trust in the academic enterprise.
+Grantsmanship - the process of securing grants - is changing due to AI. This is an unprecedented, irreversible and unavoidable process, occurring at a rate which exceeds the adaptive capacity of all institutions and most individuals. From the accelerationist perspective, it is necessary to _lean in_ to emerging technologies and ensure that they serve to maximise scientific productivity. This is, moreover, a duty incumbent on all researchers, owing to the importance of public trust in the academic enterprise.
 
 Applications for prestigious funding opportunities have risen sharply since 2022. Applicants are using LLMs to craft and refine their proposals, and referees are using LLMs to evaluate them. A minority of both applicants and referees deny this, including a dwindling subset who are telling the truth. Considering only the tools that are available at the time of writing, academia will naturally saturate in a configuration where LLM-assisted grantsmanship ubiquitous, and expected. It will be argued elsewhere that this will have several benefits, including but not limited to:
 - The liberation of time which can be spent on research, constituting a better use of public money.
@@ -19,7 +21,7 @@ Applications for prestigious funding opportunities have risen sharply since 2022
 - Improved signal-to-noise ratio for the excellence of ideas, due to all proposals having - and being expected to have - flawless presentation.
 - A general diminution of grantsmanship itself as a proxy metric, and a return to results-based evaluation: "_Stop promising to do things. What did you publish with your last grant, and who cited you?_"
 
-**Martensite** is intended to bring this saturation forwards in time. It should be cloned, forked, or used a prompt for those wishing to roll their own system. The name derives from the hard, strong crystalline phase of steel formed by rapid quenching.
+**Martensite** is intended to bring this saturation forwards in time. The source should be cloned, forked, or used a prompt for those wishing to roll their own system. The name derives from the hard, strong crystalline phase of steel formed by rapid quenching.
 
 ## Quick Start
 
@@ -262,6 +264,6 @@ Martensite/
 
 See LICENSE file for details.
 
----
+## Acknowledgements
 
-*Martensite represents a paradigm shift in academic application preparation - from subjective self-assessment to objective, multi-perspective AI evaluation.*
+I am indebted to Will Handley for calling out zero-sum famine mentality on my part, and encouraging me to make this repo public.

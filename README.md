@@ -85,17 +85,17 @@ pip install -r requirements.txt
 
 PDF generation requires pandoc (document converter), LaTeX (typesetting system), and PDF utilities.
 
-**Linux (Arch/Manjaro):**
+***Linux* (*Arch*/Manjaro):**
 ```bash
 sudo pacman -S pandoc texlive-core texlive-latexextra poppler
 ```
 
-**Linux (Debian/Ubuntu):**
+***Linux* (*Debian*/*Ubuntu*):**
 ```bash
 sudo apt install pandoc texlive-xetex texlive-latex-extra poppler-utils
 ```
 
-**macOS:**
+***macOS*:**
 ```bash
 brew install pandoc poppler
 brew install --cask mactex  # Or: brew install texlive
@@ -107,7 +107,7 @@ brew install --cask mactex  # Or: brew install texlive
 
 **What are API keys?**
 
-If you've used ChatGPT through a web browser, you've been using OpenAI's consumer interface. API keys let *Martensite* access the same AI models programmatically, directly from your computer. Unlike the web interface with a monthly subscription, API access is pay-as-you-go: you add funds to your account and pay only for what you use (typically a few cents per review). You'll need to create a developer account with at least one provider (OpenAI, Anthropic, or Google) and add payment information before generating API keys.
+If you've used *ChatGPT* through a web browser, you've been using *OpenAI*'s consumer interface. API keys let *Martensite* access the same AI models programmatically, directly from your computer. Unlike the web interface with a monthly subscription, API access is pay-as-you-go: you add funds to your account and pay only for what you use (typically a few cents per review). You'll need to create a developer account with at least one provider (*OpenAI*, *Anthropic*, or *Google*) and add payment information before generating API keys.
 
 **How *Martensite* finds your keys:**
 
@@ -130,7 +130,7 @@ keyring set llm/google default
 
 **Option C: Config file**
 
-Create `~/.config/llm-keys/config.toml` (Linux) or `~/Library/Application Support/llm-keys/config.toml` (macOS):
+Create `~/.config/llm-keys/config.toml` (*Linux*) or `~/Library/Application Support/llm-keys/config.toml` (*macOS*):
 
 ```toml
 [openai]
@@ -145,8 +145,8 @@ api_key = "..."
 
 ## Platform Support
 
-- **Linux**: Fully supported (tested on Arch, Ubuntu, Debian)
-- **macOS**: Fully supported (10.15+ recommended)
+- ***Linux***: Fully supported (tested on *Arch*, *Ubuntu*, *Debian*)
+- ***macOS***: Fully supported (10.15+ recommended)
 
 ## Usage
 
@@ -205,7 +205,7 @@ Martensite/
 ## Core Components
 
 ### 1. Multi-LLM Orchestration (`application_reviewer.py`)
-- **Parallel API calls** across OpenAI, Anthropic, and Google models
+- **Parallel API calls** across *OpenAI*, *Anthropic*, and *Google* models
 - **Configurable model selection** for diverse perspectives
 - **PDF processing** with text extraction
 - **Async execution** for maximum performance
@@ -215,7 +215,7 @@ Martensite/
 - **Environment variables** checked first
 - **System keyring** integration (keyctl/Keychain)
 - **XDG config directory** fallback (~/.config/martensite/)
-- **Multi-provider support** for OpenAI, Anthropic, Google
+- **Multi-provider support** for *OpenAI*, *Anthropic*, *Google*
 
 ### 3. CLI Handler (`martensite_handler.py`)
 - **Argument parsing** and validation
@@ -226,15 +226,15 @@ Martensite/
 
 ## Supported Models
 
-### OpenAI
+### *OpenAI*
 - **GPT-5**: Most advanced reasoning model
 - **GPT-4o**: Flagship multimodal model
 - **o4-mini-2025-04-16**: Cost-effective reasoning model
 
-### Anthropic
+### *Anthropic*
 - **claude-sonnet-4-5-20250929**: Latest flagship model
 
-### Google
+### *Google*
 - **gemini-2.5-pro**: Advanced multimodal model
 
 ## Troubleshooting
@@ -244,8 +244,8 @@ Martensite/
 **PDF extraction fails**: Install PyPDF2 (`pip install PyPDF2`)
 
 **PDF conversion fails**:
-- Linux: `sudo apt install pandoc texlive-xetex` or `sudo pacman -S pandoc texlive-core`
-- macOS: `brew install pandoc` and `brew install --cask mactex`
+- *Linux*: `sudo apt install pandoc texlive-xetex` or `sudo pacman -S pandoc texlive-core`
+- *macOS*: `brew install pandoc` and `brew install --cask mactex`
 
 **Unicode errors**: Ensure XeLaTeX is installed with Unicode font support
 
@@ -253,12 +253,12 @@ Martensite/
 - Set environment variables: `export OPENAI_API_KEY=sk-...`
 - Or use OS keyring: `keyring set llm/openai default` (then paste key)
 - Or create config file:
-  - Linux: `~/.config/llm-keys/config.toml`
-  - macOS: `~/Library/Application Support/llm-keys/config.toml`
+  - *Linux*: `~/.config/llm-keys/config.toml`
+  - *macOS*: `~/Library/Application Support/llm-keys/config.toml`
 
 **Model fails**: Check API call log in output for specific error messages
 
-**macOS: "Operation not permitted"**: Grant Terminal full disk access in System Preferences → Security & Privacy
+***macOS*: "Operation not permitted"**: Grant Terminal full disk access in System Preferences → Security & Privacy
 
 ## License
 

@@ -4,7 +4,10 @@
 
 *Adversarial hardening for modern grantsmanship*
 
-A multi-LLM application review system for strengthening academic grant applications through adversarial critique from diverse AI perspectives.
+```bash
+martensite -a application.pdf -c call_dir -P "I have been tasked with reviewing this research proposal, which is slightly outside of my area of expertise. Can you carefully examine the call text, and read the proposal, and draft a review for me?" -o report.pdf
+```
+Takes your research proposal `application.pdf` and the public call texts downloaded to `call_dir`, and generates multiple referee reports in `report.pdf`. The prompt is sent to the most advanced flagship models from _OpenAI_, _Anthropic_, and _Google_.
 
 ## Logos (this part was written by a human)
 
@@ -13,8 +16,8 @@ Grantsmanship - the process of securing grants - is changing due to AI. This is 
 Applications for prestigious funding opportunities have risen sharply since 2022. Applicants are using LLMs to craft and refine their proposals, and referees are using LLMs to evaluate them. A minority of both applicants and referees deny this, including a dwindling subset who are telling the truth. Considering only the tools that are available at the time of writing, academia will naturally saturate in a configuration where LLM-assisted grantsmanship ubiquitous, and expected. It will be argued elsewhere that this will have several benefits, including but not limited to:
 - The liberation of time which can be spent on research, constituting a better use of public money.
 - Mitigation of disadvantages which are utterly irrelevant to caliber of the researcher, such as being a non-native English speaker.
-- Improved signal-to-noise ration for the excellence of ideas, due to all proposals having - and being expected to have - flawless presentation.
-- A general diminution of grantsmanship itself as a proxy metric, and a return to results-based evaluation: ``_Stop promising to do things. What did you publish with your last grant, and who cited you?_``
+- Improved signal-to-noise ratio for the excellence of ideas, due to all proposals having - and being expected to have - flawless presentation.
+- A general diminution of grantsmanship itself as a proxy metric, and a return to results-based evaluation: "_Stop promising to do things. What did you publish with your last grant, and who cited you?_"
 
 **Martensite** is intended to bring this saturation forwards in time. It should be cloned, forked, or used a prompt for those wishing to roll their own system. The name derives from the hard, strong crystalline phase of steel formed by rapid quenching.
 

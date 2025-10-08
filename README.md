@@ -9,19 +9,19 @@
 ```bash
 martensite -a application.pdf -c call_dir -P "I have been tasked with reviewing this research proposal, which is slightly outside of my area of expertise. Can you carefully examine the call text, and read the proposal, and draft a review for me?" -o report.pdf
 ```
-Takes your research proposal `application.pdf` and the public call texts downloaded to `call_dir`, and generates multiple referee reports in `report.pdf`. The prompt is sent to the most advanced flagship models from _OpenAI_, _Anthropic_, and _Google_.
+Takes your research proposal `application.pdf` and the public call texts downloaded to `call_dir`, and generates multiple referee reports in `report.pdf`. The prompt is sent to the most advanced flagship models from _OpenAI_, _Anthropic_, and _Google_. You will need to have funded API keys for at least one provider.
 
 ## Logos (this part was written by a human)
 
 Grantsmanship - the process of securing grants - is changing due to AI. This is an unprecedented, irreversible and unavoidable process, occurring at a rate which exceeds the adaptive capacity of all institutions and most individuals. From the accelerationist perspective, it is necessary to _lean in_ to emerging technologies and ensure that they serve to maximise scientific productivity. This is, moreover, a duty incumbent on all researchers, owing to the importance of public trust in the academic enterprise.
 
-Applications for prestigious funding opportunities have risen sharply since 2022. Applicants are using LLMs to craft and refine their proposals, and referees are using LLMs to evaluate them. A minority of both applicants and referees deny this, including a dwindling subset who are telling the truth. Considering only the tools that are available at the time of writing, academia will naturally saturate in a configuration where LLM-assisted grantsmanship ubiquitous, and expected. It will be argued elsewhere that this will have several benefits, including but not limited to:
+Within Europe, applications for prestigious funding opportunities have risen sharply since 2022. Applicants are using LLMs to craft and refine their proposals, and referees are using LLMs to evaluate them. A minority of both applicants and referees deny this, including a dwindling subset who are telling the truth. Considering only the tools that are available at the time of writing, academia will naturally saturate in a configuration where LLM-assisted grantsmanship is not only ubiquitous, but also acceptable, and even expected. It will be argued elsewhere that this will have several benefits, including but not limited to:
 - The liberation of time which can be spent on research, constituting a better use of public money.
 - Mitigation of disadvantages which are utterly irrelevant to caliber of the researcher, such as being a non-native English speaker.
-- Improved signal-to-noise ratio for the excellence of ideas, due to all proposals having - and being expected to have - flawless presentation.
+- Improved signal-to-noise ratio in gauging the excellence of ideas, due to all proposals having - and being expected to have - flawless presentation.
 - A general diminution of grantsmanship itself as a proxy metric, and a return to results-based evaluation: "_Stop promising to do things. What did you publish with your last grant, and who cited you?_"
 
-**Martensite** is intended to bring this saturation forwards in time. The source should be cloned, forked, or used a prompt for those wishing to roll their own system. The name derives from the hard, strong crystalline phase of steel formed by rapid quenching.
+*Martensite* is intended to bring this saturation point forwards in time. The source code should be cloned, forked, or used a prompt for those wishing to roll their own system. The name derives from the hard, strong crystalline phase of steel formed by rapid quenching.
 
 ## Quick Start
 
@@ -47,11 +47,11 @@ martensite -a CV.pdf -P "Focus on research impact" -o cv_review.pdf
 
 The PATH tells your terminal where to find commands. This step lets you type `martensite` from any directory instead of typing the full path to the program.
 
-Add Martensite to your PATH using either method:
+Add *Martensite* to your PATH using either method:
 
 **Option A: Direct export**
 
-This adds Martensite to your PATH permanently.
+This adds *Martensite* to your PATH permanently.
 
 ```bash
 # Add this line to your ~/.bashrc or ~/.zshrc
@@ -71,11 +71,11 @@ ln -s /path/to/Martensite/martensite.sh ~/.local/bin/martensite
 
 ### 2. Dependencies
 
-Martensite is written in Python and generates referee reports as PDF files. You'll need to install some additional software packages.
+*Martensite* is written in Python and generates referee reports as PDF files. You'll need to install some additional software packages.
 
 **Python dependencies:**
 
-These are Python libraries that Martensite uses to communicate with AI providers and process documents.
+These are Python libraries that *Martensite* uses to communicate with AI providers and process documents.
 
 ```bash
 pip install -r requirements.txt
@@ -103,15 +103,15 @@ brew install --cask mactex  # Or: brew install texlive
 
 ### 3. API Keys
 
-Martensite supports three LLM providers. You need at least one API key to run reviews.
+*Martensite* supports three LLM providers. You need at least one API key to run reviews.
 
 **What are API keys?**
 
-If you've used ChatGPT through a web browser, you've been using OpenAI's consumer interface. API keys let Martensite access the same AI models programmatically, directly from your computer. Unlike the web interface with a monthly subscription, API access is pay-as-you-go: you add funds to your account and pay only for what you use (typically a few cents per review). You'll need to create a developer account with at least one provider (OpenAI, Anthropic, or Google) and add payment information before generating API keys.
+If you've used ChatGPT through a web browser, you've been using OpenAI's consumer interface. API keys let *Martensite* access the same AI models programmatically, directly from your computer. Unlike the web interface with a monthly subscription, API access is pay-as-you-go: you add funds to your account and pay only for what you use (typically a few cents per review). You'll need to create a developer account with at least one provider (OpenAI, Anthropic, or Google) and add payment information before generating API keys.
 
-**How Martensite finds your keys:**
+**How *Martensite* finds your keys:**
 
-Martensite checks three locations in order: environment variables → OS keyring → config file. Choose whichever method is most convenient for you.
+*Martensite* checks three locations in order: environment variables → OS keyring → config file. Choose whichever method is most convenient for you.
 
 **Option A: Environment variables (recommended)**
 ```bash
@@ -266,4 +266,4 @@ See LICENSE file for details.
 
 ## Acknowledgements
 
-I am indebted to Will Handley for calling out zero-sum famine mentality on my part, and encouraging me to make this repo public.
+I am indebted to Will Handley for (i) calling out zero-sum famine mentality on my part, and encouraging me to make this repo public, and (ii) funding the _OpenAI_ inference used during development.

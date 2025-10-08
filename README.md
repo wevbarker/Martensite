@@ -6,11 +6,17 @@
 
 A multi-LLM application review system for strengthening academic grant applications through adversarial critique from diverse AI perspectives.
 
-## Overview
+## Logos (this part was written by a human)
 
-**Martensite** orchestrates multiple large language models to act as adversarial reviewers, identifying weaknesses, inconsistencies, and areas for improvement in academic documents. By aggregating feedback from diverse AI perspectives, it provides comprehensive, actionable insights to strengthen applications before submission.
+Grantsmanship - the process of securing grants - is changing due to AI. This is an unprecedented, irreversible and unavoidable process, occurring at a rate which exceeds the adaptive capacity of all institutions and most individuals. From the accelerationist perspective, it is necessary to _lean in_ to emerging technologies and ensure that they serve to maximisee scientific productivity. This is, moreover, a duty incumbent on all researchers, owing to the importance of public trust in the academic enterprise.
 
-The name "Martensite" derives from the hard, strong crystalline structure formed during rapid quenching of steel - analogous to how this system strengthens applications through rigorous AI-driven critique.
+Applications for prestigious funding opportunities have risen sharply since 2022. Applicants are using LLMs to craft and refine their proposals, and referees are using LLMs to evaluate them. A minority of both applicants and referees deny this, including a dwindling subset who are telling the truth. Considering only the tools that are available at the time of writing, academia will naturally saturate in a configuration where LLM-assisted grantsmanship ubiquitous, and expected. It will be argued elsewhere that this will have several benefits, including but not limited to:
+- The liberation of time which can be spent on research, constituting a better use of public money.
+- Mitigation of disadvantages which are utterly irrelevant to caliber of the researcher, such as being a non-native English speaker.
+- Improved signal-to-noise ration for the excellence of ideas, due to all proposals having - and being expected to have - flawless presentation.
+- A general diminution of grantsmanship itself as a proxy metric, and a return to results-based evaluation: ``_Stop promising to do things. What did you publish with your last grant, and who cited you?_``
+
+**Martensite** is intended to bring this saturation forwards in time. It should be cloned, forked, or used a prompt for those wishing to roll their own system. The name derives from the hard, strong crystalline phase of steel formed by rapid quenching.
 
 ## Quick Start
 

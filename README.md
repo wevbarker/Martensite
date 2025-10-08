@@ -266,4 +266,4 @@ See LICENSE file for details.
 
 ## Acknowledgements
 
-I am indebted to Will Handley for (i) calling out zero-sum famine mentality on my part, and encouraging me to make this repo public, and (ii) funding the _OpenAI_ inference used during development.
+I am indebted to Will Handley for (i) calling out zero-sum famine mentality on my part, and encouraging me to make this repository public, and (ii) funding the _OpenAI_ inference used during development. I am also grateful to Ilona Gottwaldová for bringing the big picture of LLM-assisted grantsmanship to my attention.

@@ -1,0 +1,80 @@
+Nice — below are the direct URLs (and the exact file links) you can scrape to collect **all call texts and the key application materials** for the **2025 Physics For Future (P4F)** (2nd call) at FZU, Prague. I’ve grouped the most important items first (call text, guide, templates, application portal) and included the P4F site pages that contain FAQs, supervisors, news and contact info.
+
+---
+
+# Essential call pages & documents (direct links)
+
+* P4F programme (homepage — central index). ([FZU CAS][1])
+  `https://p4f.fzu.cz/`
+
+* For candidates (call overview, timeline, download links, FAQ). — contains the Download list that links to the PDFs/DOCX below. ([FZU CAS][2])
+  `https://p4f.fzu.cz/for-candidates/`
+
+* **Guide for Applicants (2nd call, PDF)** — canonical call text / rules / eligibility / evaluation (20 pages). **(recommended first scrape)**. 
+  `https://p4f.fzu.cz/wp-content/uploads/2025/06/P4F_guide_for_applicants_2nd_call_v2.pdf`
+
+* **Terms & Conditions (2nd call, PDF)** — legal / procedural terms. ([FZU CAS][3])
+  `https://p4f.fzu.cz/wp-content/uploads/2025/06/P4F_Terms_and_conditions_2nd_call_v1.pdf`
+
+* **P4F research proposal template (DOCX)** — mandatory proposal template (research proposal file you must upload). ([FZU CAS][4])
+  `https://p4f.fzu.cz/wp-content/uploads/2025/06/P4F_research_proposal_template.docx`
+
+* **Letter of Commitment (Secondment) template (DOCX)** — secondment commitment template. ([FZU CAS][5])
+  `https://p4f.fzu.cz/wp-content/uploads/2025/06/Letter-of-Commitment-template.docx`
+
+* **One-Pager for applicants (PDF)** — short summary / one-page spec. 
+  `https://p4f.fzu.cz/wp-content/uploads/2025/07/P4F_Guide_for_applicants_OnePager_Final.pdf`
+
+* **How to use the application portal (PDF)** — step-by-step portal instructions. 
+  `https://p4f.fzu.cz/wp-content/uploads/2025/08/P4F_how_to_use_the_application_portal_2ndCall.pdf`
+
+* Application portal (registration / apply page) — CEPAC application system (where applicants create accounts and submit). **Important**: forms / session cookies. ([fzu.cepac.cz][6])
+  `https://fzu.cepac.cz/Registration.aspx?ListId=638778034799110372524787&lang=en`
+
+---
+
+# Useful supporting pages (context / contacts / supervisors / news)
+
+* Our supervisors (profiles & host-lab info — use for mapping supervisors to fellowship placements). ([FZU CAS][7])
+  `https://p4f.fzu.cz/our-supervisors/`
+
+* News (announcements, call open notice, timeline updates). ([FZU CAS][8])
+  `https://p4f.fzu.cz/news-p4f/`
+  (also: the "2nd call open" post: `https://p4f.fzu.cz/news/2nd-call-open-application/`)
+
+* Institute of Physics / project page (FZU overview of P4F). ([fzu.cz][9])
+  `https://www.fzu.cz/en/research/projects/physics-future-p4f`
+
+* Contact (useful for programmatic or human queries, and for verifying anything you scrape). The site lists `p4f@fzu.cz` and phone numbers on the pages above. ([FZU CAS][2])
+
+---
+
+# Notes & scraping tips (short)
+
+1. **Primary canonical sources**: scrape the **Guide for Applicants PDF** and the **Terms & Conditions PDF** first — they are the authoritative call texts (they contain exact deadlines, eligibility, scoring and required uploads). 
+2. The proposal template and Letter-of-Commitment are **DOCX** files — extract text (python-docx / pandoc) rather than rendering HTML. ([FZU CAS][4])
+3. The application submission URL is on the CEPAC platform (fzu.cepac.cz). If you need the submission form fields to automate filling, start from the registration URL above. ([fzu.cepac.cz][6])
+4. Keep an eye on the **News** page & “For candidates” — small updates / version changes (the guide has version history). Scrape timestamps / version strings to detect updates. 
+5. If you plan to scrape programatically, respect the site’s `robots.txt` / rate limits and prefer downloading the PDFs directly (the PDFs above are explicit file URLs).
+
+---
+
+If you want, I can:
+
+* produce a short Python scraping script (requests + beautifulsoup + pdf parsing or direct download) that downloads each file and extracts text/meta (DOCX → text, PDF → text), or
+* fetch and summarise the **exact** eligibility paragraphs, deadlines, and scoring weights from the Guide for Applicants into a compact checklist you can feed into a pipeline.
+
+Which of those would help you next?
+
+[1]: https://p4f.fzu.cz/ "Physics for Future - FZU CAS | New postdoctoral programme"
+[2]: https://p4f.fzu.cz/for-candidates/ "For candidates - FZU CAS"
+[3]: https://p4f.fzu.cz/wp-content/uploads/2025/06/P4F_Terms_and_conditions_2nd_call_v1.pdf?utm_source=chatgpt.com "TERMS AND CONDITIONS P4F MSCA COFUND 2nd call"
+[4]: https://p4f.fzu.cz/wp-content/uploads/2025/06/P4F_research_proposal_template.docx?utm_source=chatgpt.com "Proposal template"
+[5]: https://p4f.fzu.cz/wp-content/uploads/2025/06/Letter-of-Commitment-template.docx?utm_source=chatgpt.com "Letter of Commitment (Secondment)"
+[6]: https://fzu.cepac.cz/Registration.aspx?ListId=638778034799110372524787&lang=en "
+
+"
+[7]: https://p4f.fzu.cz/our-supervisors/ "Our supervisors - FZU CAS"
+[8]: https://p4f.fzu.cz/news-p4f/?utm_source=chatgpt.com "News - FZU CAS"
+[9]: https://www.fzu.cz/en/research/projects/physics-future-p4f?utm_source=chatgpt.com "Physics for Future (P4F)"
+
